@@ -18,7 +18,6 @@ package org.apache.kafka.common.config;
 
 import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.config.internals.BrokerSecurityConfigs;
-import org.apache.kafka.common.utils.Java;
 import org.apache.kafka.common.utils.Utils;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -58,13 +57,23 @@ public class SslConfigs {
     public static final String DEFAULT_SSL_ENABLED_PROTOCOLS;
 
     static {
-        if (Java.IS_JAVA11_COMPATIBLE) {
+        boolean haveTLSv13 = true;
+        try {
+            javax.net.ssl.SSLContext contexttest = javax.net.ssl.SSLContext.getInstance("TLSv1.3");
+        }
+        catch (java.security.NoSuchAlgorithmException e) {
+            // We could log the exception, but we'repretty certain it's because the JRE doesn't
+            // Support newer TLS versions
+            haveTLSv13 = false;
+            }
+        if (haveTLSv13) {
             DEFAULT_SSL_PROTOCOL = "TLSv1.3";
             DEFAULT_SSL_ENABLED_PROTOCOLS = "TLSv1.2,TLSv1.3";
-        } else {
+            }
+        else {
             DEFAULT_SSL_PROTOCOL = "TLSv1.2";
             DEFAULT_SSL_ENABLED_PROTOCOLS = "TLSv1.2";
-        }
+        }        
     }
 
     public static final String SSL_KEYSTORE_TYPE_CONFIG = "ssl.keystore.type";
